@@ -1,6 +1,10 @@
 name: Create Comment with Regex Match
 
-on: [issue_comment]
+on: 
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened]
 
 jobs:
   create_comment:
@@ -11,21 +15,32 @@ jobs:
       - uses: actions-ecosystem/action-regex-match@v2
         id: regex-match
         with:
-          text: ${{ github.event.comment.body }}
-          regex: '```#nitpick([\s\S].*)```'
+          text: ${{ github.event.comment.body }} || ${{ github.event.pull_request.body }}
+          regex: '#nitpick.*```([\s\S].*)```'
           flags: gm
 
-      - uses: actions-ecosystem/action-create-comment@v1
+      - name: Create new issue
         if: ${{ steps.regex-match.outputs.match != '' }}
+        uses: imjohnbo/issue-bot@v3
         with:
-          github_token: ${{ secrets.github_token }}
-          body: |
-            Hello, @${{ github.actor }}!
+          assignees: '${{ github.actor }}'
+          title: ${{ steps.regex-match.outputs.group1 }}
+          body: |-
+            Issue created using nitpick bot by @${{ github.actor }}
 
-            The raw TypeScript code is here.
+#       - uses: actions-ecosystem/action-create-comment@v1
+#         if: ${{ steps.regex-match.outputs.match != '' }}
+#         with:
+#           github_token: ${{ secrets.github_token }}
+#           body: |
+#             Hello, @${{ github.actor }}!
 
-            ---
+#             The raw TypeScript code is here.
 
-            ${{ steps.regex-match.outputs.group1 }}
+#             ---
 
-            ---
+#             ${{ steps.regex-match.outputs.group1 }}
+
+#             ---
+
+
