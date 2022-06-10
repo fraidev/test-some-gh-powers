@@ -1,0 +1,31 @@
+name: Create Comment with Regex Match
+
+on: [issue_comment]
+
+jobs:
+  create_comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-ecosystem/action-regex-match@v2
+        id: regex-match
+        with:
+          text: ${{ github.event.comment.body }}
+          regex: '```#nitpick([\s\S].*)```'
+          flags: gm
+
+      - uses: actions-ecosystem/action-create-comment@v1
+        if: ${{ steps.regex-match.outputs.match != '' }}
+        with:
+          github_token: ${{ secrets.github_token }}
+          body: |
+            Hello, @${{ github.actor }}!
+
+            The raw TypeScript code is here.
+
+            ---
+
+            ${{ steps.regex-match.outputs.group1 }}
+
+            ---
